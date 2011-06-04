@@ -1,0 +1,27 @@
+FLATTRAFFIC
+------------
+
+A web-based application for reporting on netflow traffic flows inside a SQL database
+and summarising which IPs/entities have consumed data allocation.
+
+This software is licensed under the GNU AGPL as detailed in docs/COPYRIGHT
+
+
+
+DIRECTORIES
+-----------
+
+* docs/
+	Documentation, authors file, copyright/license and other information.
+
+* htdocs/
+	Web application.
+
+* resources/
+	Sample config files, spec files, packaging tools and other bits.
+
+* sql/
+	Database schemea install and upgrade components.
+
+
+
