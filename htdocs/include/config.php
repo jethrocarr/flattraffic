@@ -23,11 +23,11 @@ $GLOBALS["config"] = array();
 */
 
 // define the application details
-$GLOBALS["config"]["app_name"]			= "Amberphplib";
-$GLOBALS["config"]["app_version"]		= "1";
+$GLOBALS["config"]["app_name"]			= "FlatTraffic";
+$GLOBALS["config"]["app_version"]		= "1.0.0";
 
 // define the schema version required
-$GLOBALS["config"]["schema_version"]		= "20091026";
+$GLOBALS["config"]["schema_version"]		= "20110604";
 
 
 
