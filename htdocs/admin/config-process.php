@@ -25,6 +25,9 @@ if (user_permissions_get("admin"))
 //	$data["BLACKLIST_ENABLE"]		= @security_form_input_predefined("any", "BLACKLIST_ENABLE", 0, "");
 //	$data["BLACKLIST_LIMIT"]		= @security_form_input_predefined("int", "BLACKLIST_LIMIT", 1, "");
 	
+	$data["UPSTREAM_BILLING_MODE"]		= @security_form_input_predefined("any", "UPSTREAM_BILLING_MODE", 1, "");
+	$data["UPSTREAM_BILLING_REPEAT_DATE"]	= @security_form_input_predefined("int", "UPSTREAM_BILLING_REPEAT_DATE", 1, "");
+
 	$data["SERVICE_TRAFFIC_DB_TYPE"]	= @security_form_input_predefined("any", "SERVICE_TRAFFIC_DB_TYPE", 1, "");
 	$data["SERVICE_TRAFFIC_DB_HOST"]	= @security_form_input_predefined("any", "SERVICE_TRAFFIC_DB_HOST", 0, "");
 	$data["SERVICE_TRAFFIC_DB_NAME"]	= @security_form_input_predefined("any", "SERVICE_TRAFFIC_DB_NAME", 1, "");

@@ -75,6 +75,30 @@ class page_output
 
 
 
+		// upstream billing
+		$structure = NULL;
+		$structure["fieldname"]					= "UPSTREAM_BILLING";
+		$structure["type"]					= "text";
+		$structure["defaultvalue"]				= lang_trans("text_about_upstream_billing");
+		$this->obj_form->add_input($structure);
+
+		$structure = NULL;
+		$structure["fieldname"]					= "UPSTREAM_BILLING_MODE";
+		$structure["type"]					= "radio";
+		$structure["values"]					= array("period_monthly");
+		$structure["options"]["no_translate_fieldname"]		= "yes";
+		$this->obj_form->add_input($structure);
+
+		$structure = NULL;
+		$structure["fieldname"]					= "UPSTREAM_BILLING_REPEAT_DATE";
+		$structure["type"]					= "input";
+		$structure["options"]["width"]				= "100";
+		$structure["options"]["maxlength"]			= "2";
+		$structure["options"]["no_translate_fieldname"]		= "yes";
+		$this->obj_form->add_input($structure);
+
+
+
 
 		// contributions
 		$structure = NULL;
@@ -121,6 +145,7 @@ class page_output
 		
 		// define subforms
 		$this->obj_form->subforms["config_netflow"]		= array("SERVICE_TRAFFIC_DB_TYPE", "SERVICE_TRAFFIC_DB_HOST", "SERVICE_TRAFFIC_DB_NAME", "SERVICE_TRAFFIC_DB_USERNAME", "SERVICE_TRAFFIC_DB_PASSWORD");
+		$this->obj_form->subforms["config_upstream"]		= array("UPSTREAM_BILLING", "UPSTREAM_BILLING_MODE", "UPSTREAM_BILLING_REPEAT_DATE");
 		$this->obj_form->subforms["config_contributions"]	= array("PHONE_HOME");
 //		$this->obj_form->subforms["config_security"]		= array("SESSION_TIMEOUT", "BLACKLIST_ENABLE", "BLACKLIST_LIMIT");
 		$this->obj_form->subforms["config_security"]		= array("SESSION_TIMEOUT");
