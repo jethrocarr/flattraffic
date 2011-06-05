@@ -11,4 +11,7 @@
 @log_debug("start", "");
 
 
+// member components
+require("inc_traffic_reports.php");
+
 ?>

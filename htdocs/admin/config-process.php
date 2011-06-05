@@ -19,7 +19,7 @@ if (user_permissions_get("admin"))
 		Load Data
 	*/
 
-	$data["PHONE_HOME"]			= @security_form_input_predefined("any", "PHONE_HOME", 0, "");
+	$data["PHONE_HOME"]			= @security_form_input_predefined("checkbox", "PHONE_HOME", 0, "");
 
 	$data["SESSION_TIMEOUT"]		= @security_form_input_predefined("int", "SESSION_TIMEOUT", 1, "");
 //	$data["BLACKLIST_ENABLE"]		= @security_form_input_predefined("any", "BLACKLIST_ENABLE", 0, "");
@@ -33,6 +33,13 @@ if (user_permissions_get("admin"))
 	$data["SERVICE_TRAFFIC_DB_NAME"]	= @security_form_input_predefined("any", "SERVICE_TRAFFIC_DB_NAME", 1, "");
 	$data["SERVICE_TRAFFIC_DB_USERNAME"]	= @security_form_input_predefined("any", "SERVICE_TRAFFIC_DB_USERNAME", 1, "");
 	$data["SERVICE_TRAFFIC_DB_PASSWORD"]	= @security_form_input_predefined("any", "SERVICE_TRAFFIC_DB_PASSWORD", 0, "");
+	
+	$data["STATS_REPORT_OVERVIEW"]		= @security_form_input_predefined("checkbox", "STATS_REPORT_OVERVIEW", 0, "");
+	$data["STATS_REPORT_PERUSER"]		= @security_form_input_predefined("checkbox", "STATS_REPORT_PERUSER", 0, "");
+	$data["STATS_REPORT_RAW"]		= @security_form_input_predefined("checkbox", "STATS_REPORT_RAW", 0, "");
+
+	$data["STATS_INCLUDE_UNMATCHED"]	= @security_form_input_predefined("checkbox", "STATS_INCLUDE_UNMATCHED", 0, "");
+	$data["STATS_INCLUDE_RDNS"]		= @security_form_input_predefined("checkbox", "STATS_INCLUDE_RDNS", 0, "");
 
 
 

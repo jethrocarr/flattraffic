@@ -327,7 +327,7 @@ if (!preg_match('/^user/', $page))
 	<table width="100%">
 	<tr>
 		<td align="left">
-		<p style="font-size: 10px; color: #ffffff;">FlatTraffic is licensed under the AGPL</p>
+		<p style="font-size: 10px; color: #ffffff;">FlatTraffic is licensed under the AGPL, developed by <a style="color: #ffffff" href="http://www.amberdms.com/flattraffic">Amberdms</a></p>
 		</td>
 
 		<td align="right">
