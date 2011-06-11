@@ -13,6 +13,7 @@
 
 // member components
 require("inc_traffic_reports.php");
+require("inc_traffic_ui.php");
 require("inc_networks.php");
 
 ?>

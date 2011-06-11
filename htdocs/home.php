@@ -42,11 +42,11 @@ else
 
 			if (!empty($GLOBALS["config"]["SERVICE_TRAFFIC_DB_NAME"]) && !empty($GLOBALS["config"]["STATS_REPORT_OVERVIEW"]))
 			{
-				$obj_report = New traffic_reports;
+				$obj_report = New traffic_ui;
 
-				$obj_report->summary();
-		
-				format_msgbox("info", "<p>In the period from ".time_format_humandate($obj_report->date_start) ." to ". time_format_humandate($obj_report->date_end) ." there has been combined usage of ". format_size_human($obj_report->summary["total"]) ." traffic.<br><br><a class=\"button_small\" href=\"index.php?page=reports/reports.php\">More Information</a></p>");
+				$obj_report->status_usage();
+				print "<br>";
+				$obj_report->status_cache();
 			}
 			else
 			{

@@ -598,11 +598,12 @@ function time_format_hourmins($seconds)
 
 	Values
 	date		Format YYYY-MM-DD OR unix timestamp (optional)
+	time		(optional) TRUE/FALSE to inclue time
 
 	Returns
 	string		Date in human-readable format.
 */
-function time_format_humandate($date = NULL)
+function time_format_humandate($date = NULL, $time = FALSE)
 {
 	log_debug("misc", "Executing time_format_humandate($date)");
 
@@ -640,20 +641,31 @@ function time_format_humandate($date = NULL)
 
 
 	// convert to human readable format
+	$string = "";
+
 	switch ($format)
 	{
 		case "mm-dd-yyyy":
-			return date("m-d-Y", $timestamp);
+			$string = date("m-d-Y", $timestamp);
 		break;
 
 		case "dd-mm-yyyy":
-			return date("d-m-Y", $timestamp);
+			$string = date("d-m-Y", $timestamp);
 		break;
 		
 		case "yyyy-mm-dd":
 		default:
-			return date("Y-m-d", $timestamp);
+			$string = date("Y-m-d", $timestamp);
 		break;
+	}
+	
+	if ($time)
+	{
+		return $string ." ". date("H:i");
+	}
+	else
+	{
+		return $string;
 	}
 }
 
@@ -1374,6 +1386,21 @@ function ipv4_convert_arpa( $ipaddress )
 	return $result;
 
 } // end of ipv4_convert_arpa
+
+
+
+
+/*
+	SORTING FUNCTIONS
+
+	These functions exist to help with special sorting circumstances
+*/
+
+function sort_natural_ipaddress($a, $b)
+{
+	return strnatcmp($a["ipaddress"], $b["ipaddress"]);
+}
+
 
 
 

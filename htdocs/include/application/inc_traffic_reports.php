@@ -21,9 +21,6 @@ class traffic_reports
 	var $date_start;		// start of billing period
 	var $date_end;			// end of billing period
 
-	var $summary;			// summary data
-	var $hosts;			// array of internal IPs/hosts
-
 
 	/*
 		__construct
@@ -63,6 +60,19 @@ class traffic_reports
 		/*
 			Date Range
 		*/
+		
+		if (!empty($_GET["date_start"]) && !empty($_GET["date_end"]))
+		{
+			$_SESSION["user"]["report"]["date_start"]	= security_script_input_predefined("date", $_GET["date_start"]);
+			$_SESSION["user"]["report"]["date_end"]		= security_script_input_predefined("date", $_GET["date_end"]);
+		}
+
+
+		if (!empty($_GET["date_start_dd"]) && !empty($_GET["date_end_dd"]))
+		{
+			$_SESSION["user"]["report"]["date_start"]	= security_script_input_predefined("date", $_GET["date_start_yyyy"] ."-". $_GET["date_start_mm"] ."-". $_GET["date_start_dd"]);
+			$_SESSION["user"]["report"]["date_end"]		= security_script_input_predefined("date", $_GET["date_end_yyyy"] ."-". $_GET["date_end_mm"] ."-". $_GET["date_end_dd"]);
+		}
 
 		// fetch from session if set
 		if (!empty($_SESSION["user"]["report"]["date_start"]) && !empty($_SESSION["user"]["report"]["date_start"]))
@@ -87,31 +97,16 @@ class traffic_reports
 				$this->date_end		= sql_get_singlevalue("SELECT DATE_SUB('". $this->date_end ."', INTERVAL 1 DAY ) as value");
 			}
 
+			// save session values
+			$_SESSION["user"]["report"]["date_start"]	= $this->date_start;
+			$_SESSION["user"]["report"]["date_end"]		= $this->date_end;
+
 		}
 
 		log_write("debug", "traffic_reports", "Report date range is ". $this->date_start ." to ". $this->date_end ."");
 
 	}
 
-
-
-	/*
-		summary
-
-		Generates a brief summary of usage information for the period.
-	*/
-	function summary()
-	{
-		log_write("debug", "traffic_reports", "Executing summary()");
-
-		$this->obj_db_traffic->string	= "SELECT SUM(octets) as value FROM traffic WHERE received >= '". $this->date_start ."' AND received <= '". $this->date_end ."'";
-		$this->obj_db_traffic->execute();
-		$this->obj_db_traffic->fetch_array();
-
-		$this->summary["total"]		= $this->obj_db_traffic->data[0]["value"];
-
-
-	} // end of summary()
 
 
 
@@ -126,7 +121,7 @@ class traffic_reports
 		log_write("debug", "traffic_reports", "Executing fetch_networks()");
 
 		$sql_obj		= New sql_query;
-		$sql_obj->string	= "SELECT ipaddress FROM networks";
+		$sql_obj->string	= "SELECT id, ipaddress FROM networks";
 		$sql_obj->execute();
 
 		if ($sql_obj->num_rows())
@@ -164,6 +159,7 @@ class traffic_reports
 					// add to array structure
 					$this->networks[ $data_row["ipaddress"] ]["network"]	= $long_network;
 					$this->networks[ $data_row["ipaddress"] ]["broadcast"]	= $long_broadcast;
+					$this->networks[ $data_row["ipaddress"] ]["id"]		= $data_row["id"];
 				}
 			}
 		}
@@ -178,13 +174,56 @@ class traffic_reports
 
 
 	/*
-		fetch_raw
+		build_cache
 
-		Fetches raw stats into $this->data["raw"]
+		Reads in data from the raw netflow tables and generates cache inside memory tables in MySQL. All reports
+		then query against these memory tables for performance reasons.
+
+		The memory cache tables store a daily total per IP address matching the configured network ranges, for traffic
+		sent/recieved.
+
+		It does not store the destination IP information, as this allows a huge reduction in stored information -if such
+		low level records are required, best to query the direct netflow database.
+
+		Returns
+		0		Failure
+		1		Success
 	*/
-	function fetch_raw()
+	function build_cache()
 	{
-		log_write("debug", "traffic_reports", "Executing fetch_raw()");
+		log_write("debug", "traffic_reports", "Executing build_cache()");
+
+
+		/*
+			Establish Memory Table Connection
+		*/
+
+		log_write("debug", "traffic_reports", "Establishing and clearing cache_traffic MEMORY table");
+
+		$obj_sql_cache			= New sql_query;
+
+		$obj_sql_cache->string		= "TRUNCATE TABLE `cache_traffic`";
+		
+		if (!$obj_sql_cache->execute())
+		{
+			log_write("error", "traffic_reports", "Unable to clear memory cache tables (TRAFFIC)");
+			return 0;
+		}
+
+
+		$obj_sql_cache->string		= "TRUNCATE TABLE `cache_rdns`";
+		
+		if (!$obj_sql_cache->execute())
+		{
+			log_write("error", "traffic_reports", "Unable to clear memory cache tables (RDNS)");
+			return 0;
+		}
+
+
+
+		/*
+			Fetch required information
+		*/
 
 		// fetch network info if required
 		if (empty($this->networks))
@@ -193,93 +232,175 @@ class traffic_reports
 		}
 
 
-		// query traffic database
-		$this->obj_db_traffic->string	= "SELECT src_addr, dst_addr, SUM(octets) as bytes FROM traffic WHERE received >= '". $this->date_start ."' AND received <= '". $this->date_end ."' GROUP BY src_addr, dst_addr ";
-		$this->obj_db_traffic->execute();
-		
 
-		if ($this->obj_db_traffic->num_rows())
+		/*
+			Query Traffic Database
+
+			Because of the size of netflow databases, we fetch the records on a per-day basis within the configured range, to prevent running out
+			of PHP memory when 10 million rows are returned.
+		*/
+
+		log_write("debug", "traffic_reports", "Fetching raw records for each date within range");
+
+		// generate date range
+		$tmp_date		= $this->date_start;
+		$date_range		= array();
+
+		$date_range[]		= $this->date_start;
+
+		while ($tmp_date != $this->date_end)
 		{
-			$this->obj_db_traffic->fetch_array();
+			$tmp_date	= explode("-", $tmp_date);
+			$tmp_date 	= date("Y-m-d", mktime(0,0,0,$tmp_date[1], ($tmp_date[2] +1), $tmp_date[0]));
 
-			foreach ($this->obj_db_traffic->data as $data_row)
+			$date_range[]	= $tmp_date;
+		}
+
+		for ($i=0; $i < count($date_range); $i++)
+		{
+			// strip "-" charactor
+			$date_range[$i] = str_replace("-", "", $date_range[$i]);
+		}
+
+
+		// store reverse DNS
+		$addresses_resolved = array();
+
+
+		foreach ($date_range as $date)
+		{
+			// query traffic database
+			$this->obj_db_traffic->string	= "SELECT src_addr, dst_addr, SUM(octets) as bytes FROM traffic WHERE received >= '". $date ."' AND received <= DATE_ADD('". $date ."', INTERVAL 1 DAY) GROUP BY src_addr, dst_addr ";
+			$this->obj_db_traffic->execute();
+
+
+			$data_raw = array();
+			
+
+			if ($this->obj_db_traffic->num_rows())
 			{
-				/*
-					Here we run through all the known networks to determine whether the current row
-					is for a network we wish to report on.
+				$this->obj_db_traffic->fetch_array();
 
-					We check both the source and destination IP addresses against the network ranges
-					and then handle appropiately.
-				*/
-
-
-				// check if the src or dst address belongs to one of the range
-				$long_src	= ip2long($data_row["src_addr"]);
-				$long_dst	= ip2long($data_row["dst_addr"]);
-
-				// track local status
-				$local_src	= 0;
-				$local_dst	= 0;
-
-				foreach (array_keys($this->networks) as $network)
+				foreach ($this->obj_db_traffic->data as $data_row)
 				{
-					if ($long_src >= $this->networks[ $network ]["network"] && $long_src <= $this->networks[ $network ]["broadcast"])
+					/*
+						Here we run through all the known networks to determine whether the current row
+						is for a network we wish to report on.
+
+						We check both the source and destination IP addresses against the network ranges
+						and then handle appropiately.
+					*/
+
+
+					// check if the src or dst address belongs to one of the range
+					$long_src	= ip2long($data_row["src_addr"]);
+					$long_dst	= ip2long($data_row["dst_addr"]);
+
+					// track local status
+					$local_src	= 0;
+					$local_dst	= 0;
+
+					foreach (array_keys($this->networks) as $network)
 					{
-						// IP is in a local rage
-						$local_src = 1;
+						if ($long_src >= $this->networks[ $network ]["network"] && $long_src <= $this->networks[ $network ]["broadcast"])
+						{
+							// IP is in a local rage
+							$local_src = $this->networks[ $network ]["id"];
+						}
+
+						if ($long_dst >= $this->networks[ $network ]["network"] && $long_dst <= $this->networks[ $network ]["broadcast"])
+						{
+							// IP is in a local rage
+							$local_dst = $this->networks[ $network ]["id"];
+						}
+
+					} // end of foreach
+
+					if ($local_src && !$local_dst)
+					{
+						// source IP is a local range, destination is an external range
+						$data_raw[ $local_src ][ $data_row["src_addr"] ]["sent"] += $data_row["bytes"];
+					}
+					elseif ($local_dst && !$local_src)
+					{
+						// destination IP is a local range, source is a external range
+						$data_raw[ $local_dst ][ $data_row["dst_addr"] ]["received"] += $data_row["bytes"];
+					}
+					elseif ($local_dst && $local_src)
+					{
+						// both IPs are local, thus we should exclude from report - don't want to report on local traffic!
+						//print "excluded: dst ". $data_row["dst_addr"] ." to src ". $data_row["src_addr"] ."<br>";
+						
+						if ($GLOBALS["config"]["STATS_INCLUDE_UNMATCHED"])
+						{
+							$data_raw[0]["local"] += $data_row["bytes"];
+						}
+					}
+					else
+					{
+						// neither IP is local
+						//print "excluded: dst ". $data_row["dst_addr"] ." to src ". $data_row["src_addr"] ."<br>";
+
+
+						if ($GLOBALS["config"]["STATS_INCLUDE_UNMATCHED"])
+						{
+							$data_raw[0]["unmatched"] += $data_row["bytes"];
+						}
 					}
 
-					if ($long_dst >= $this->networks[ $network ]["network"] && $long_dst <= $this->networks[ $network ]["broadcast"])
+				} // end of loop through traffic rows
+
+			} // end if traffic rows
+
+
+			/*
+				Process data and insert into caches
+			*/
+
+			foreach (array_keys($data_raw) as $id_network)
+			{
+				foreach (array_keys($data_raw[ $id_network ]) as $ipaddress)
+				{
+					/*
+						Insert traffic into cache
+					*/
+
+					$obj_sql_cache->string	= "INSERT INTO `cache_traffic` (id_network, date, ipaddress, bytes_received, bytes_sent) VALUES ('". $id_network ."', '". $date ."', '". $ipaddress ."', '". $data_raw[ $id_network ][$ipaddress]["received"] ."', '". $data_raw[ $id_network ][$ipaddress]["sent"] ."')";
+					$obj_sql_cache->execute();
+
+	
+					/*
+						Lookup reverse DNS if configured and store in a cache - keep DNS load to
+						a minimum
+					*/
+
+					if ($GLOBALS["config"]["STATS_INCLUDE_RDNS"] && !in_array($ipaddress, $addresses_resolved))
 					{
-						// IP is in a local rage
-						$local_dst = 1;
-					}
+						$hostname		= @gethostbyaddr($ipaddress);
 
-				} // end of foreach
+						$obj_sql_cache->string	= "INSERT INTO `cache_rdns` (ipaddress, reverse) VALUES ('". $ipaddress ."', '". $hostname ."')";
+						$obj_sql_cache->execute();
 
-				if ($local_src && !$local_dst)
-				{
-					// source IP is a local range, destination is an external range
-					$this->data["raw"][ $data_row["src_addr"] ] += $data_row["bytes"];
-				}
-				elseif ($local_dst && !$local_src)
-				{
-					// destination IP is a local range, source is a external range
-					$this->data["raw"][ $data_row["dst_addr"] ] += $data_row["bytes"];
-				}
-				elseif ($local_dst && $local_src)
-				{
-					// both IPs are local, thus we should exclude from report - don't want to report on local traffic!
-					//print "excluded: dst ". $data_row["dst_addr"] ." to src ". $data_row["src_addr"] ."<br>";
-					
-					if ($GLOBALS["config"]["STATS_INCLUDE_UNMATCHED"])
-					{
-						$this->data["raw"]["unmatched"] += $data_row["bytes"];
-					}
-				}
-				else
-				{
-					// neither IP is local
-					//print "excluded: dst ". $data_row["dst_addr"] ." to src ". $data_row["src_addr"] ."<br>";
-
-
-					if ($GLOBALS["config"]["STATS_INCLUDE_UNMATCHED"])
-					{
-						$this->data["raw"]["unmatched"] += $data_row["bytes"];
+						$addresses_resolved[]	= $ipaddress;
 					}
 				}
-
-			} // end of loop through traffic rows
-
-
-		// sort by IP
-		uksort( $this->data["raw"], 'strnatcmp');
+			}
 
 
-		} // end if traffic rows
+			// clear data
+			unset($data_raw);
+			unset($this->obj_db_traffic->data);
+			unset($this->obj_db_traffic->data_num_rows);
 
-	} // end of fetch_raw
+		} // end of daily loop
 
+
+		// update cache build time
+		$sql_obj		= New sql_query;
+		$sql_obj->string	= "UPDATE config SET value='". time() ."' WHERE name='CACHE_TIME'";
+		$sql_obj->execute();
+
+	} // end of build_cache_traffic
 
 
 	/*
@@ -295,6 +416,10 @@ class traffic_reports
 		unset($this->summary);
 		unset($this->obj_db_traffic);
 	}
-}
+
+} // end of class traffic_reports
+
+
+
 
 ?>
