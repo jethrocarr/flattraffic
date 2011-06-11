@@ -26,15 +26,7 @@ class page_output
 
 	function execute()
 	{
-		/*
-			Establish Report
-		*/
-
-		$this->obj_report	= New traffic_reports;
-		
-
-
-
+		// nothing todo
 		return 1;
 	}
 
@@ -44,6 +36,11 @@ class page_output
 
 		print "<p>This page provides traffic reports for the specified data range.</p>";
 		
+		$obj_report = New traffic_ui;
+
+		$obj_report->status_usage();
+		print "<br>";
+		$obj_report->status_cache();
 	}
 }
 
