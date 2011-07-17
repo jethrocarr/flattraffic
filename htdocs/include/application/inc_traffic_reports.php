@@ -109,6 +109,85 @@ class traffic_reports
 
 
 
+	/*
+		fetch_periods
+
+		Generates the range of periods available - uses the date logic plus the first/last records
+		in the database to return a array with the range.
+
+		Returns
+		array		Array of date ranges in form of array["yyyy-mm-dd"]["start"] = "yyyy-mm-dd"
+				where the array key date is the end date of the period.
+	*/
+	
+	function fetch_periods()
+	{
+		log_write("debug", "traffic_reports", "Executing fetch_periods()");
+
+		$date_first		= null;
+		$date_last		= null;
+		$date_last_timestamp	= null;
+		$date_first_timestamp	= null;
+
+
+		/*
+			Fetch limits -earliest and oldest records
+		*/
+
+
+		// first
+		$this->obj_db_traffic->string	= "SELECT received FROM traffic ORDER BY received ASC LIMIT 1";
+		$this->obj_db_traffic->execute();
+		
+		if ($this->obj_db_traffic->num_rows())
+		{
+			$this->obj_db_traffic->fetch_array();
+
+			$date_first = $this->obj_db_traffic->data[0]["received"];
+		}
+
+		log_write("debug", "traffic_reports", "Calculated first data point as $date_first");
+	
+
+		/*
+			Generate array of ranges between the limits
+		*/
+
+		$periods	= array();
+	
+		while ($date_last_timestamp < time())
+		{
+			// dates
+			$date_first_timestamp	= time_date_to_timestamp($date_first);
+			$date_last_timestamp	= time_date_to_timestamp($date_last);
+		
+
+			// generate first period - tricky since first records might not be
+			if ($date_first_array[2] > $GLOBALS["config"]["UPSTREAM_BILLING_REPEAT_DATE"])
+			{
+				// first date is larger than the start date of the billing period
+			//	$date_start	= $date_first_array[0] ."-". $date_first_array[1] ."-". $GLOBALS["config"]["UPSTREAM_BILLING_REPEAT_DATE"];
+			//	$date_end	= sql_get_singlevalue("SELECT DATE_ADD('". $date_start ."', INTERVAL 1 MONTH ) as value");
+			}
+			elseif ($date_first_array[2] < $GLOBALS["config"]["UPSTREAM_BILLING_REPEAT_DATE"])
+			{
+				// first date is less than the period date, this means the first date is for the previous period
+			}
+			else
+			{
+				// first date aligns with the billing period
+			//	$date_start	= $date_first_array[0] ."-". $date_first_array[1] ."-". $GLOBALS["config"]["UPSTREAM_BILLING_REPEAT_DATE"];
+			//	$date_end	= sql_get_singlevalue("SELECT DATE_ADD('". $date_start ."', INTERVAL 1 MONTH ) as value");
+
+
+			}
+		}
+		
+	} // end of fetch_periods
+
+
+
+
 
 	/*
 		fetch_networks
@@ -269,8 +348,12 @@ class traffic_reports
 
 		foreach ($date_range as $date)
 		{
+			// track rows to delete - some configuration options enable auto-tuning, by removing rows that are
+			// unwanted.
+			$row_delete = array();
+
 			// query traffic database
-			$this->obj_db_traffic->string	= "SELECT src_addr, dst_addr, SUM(octets) as bytes FROM traffic WHERE received >= '". $date ."' AND received <= DATE_ADD('". $date ."', INTERVAL 1 DAY) GROUP BY src_addr, dst_addr ";
+			$this->obj_db_traffic->string	= "SELECT id, src_addr, dst_addr, SUM(octets) as bytes FROM traffic WHERE received >= '". $date ."' AND received <= DATE_ADD('". $date ."', INTERVAL 1 DAY) GROUP BY src_addr, dst_addr ";
 			$this->obj_db_traffic->execute();
 
 
@@ -335,6 +418,12 @@ class traffic_reports
 						{
 							$data_raw[0]["local"] += $data_row["bytes"];
 						}
+
+						// should we delete this row?
+						if ($GLOBALS["config"]["TRUNCATE_DB_LOCAL"])
+						{
+							$row_delete[] = $data_row["id"];
+						}
 					}
 					else
 					{
@@ -346,6 +435,12 @@ class traffic_reports
 						{
 							$data_raw[0]["unmatched"] += $data_row["bytes"];
 						}
+
+						// should we delete this row?
+						if ($GLOBALS["config"]["TRUNCATE_DB_UNMATCHED"])
+						{
+							$row_delete[] = $data_row["id"];
+						}
 					}
 
 				} // end of loop through traffic rows
@@ -354,8 +449,26 @@ class traffic_reports
 
 
 			/*
+				Delete Unwanted Rows
+			*/
+
+			if (!empty($row_delete))
+			{
+				log_write("debug", "traffic_reports", "Cleaning raw DB of unwanted row records");
+
+				$row_delete_string		= format_arraytocommastring($row_delete, NULL);
+
+				$this->obj_db_traffic->string	= "DELETE FROM `traffic` WHERE id IN ($row_delete_string)";
+				$this->obj_db_traffic->execute();
+			}
+
+
+			/*
 				Process data and insert into caches
 			*/
+
+			log_write("debug", "traffic_reports", "Generating cached records....");
+
 
 			foreach (array_keys($data_raw) as $id_network)
 			{

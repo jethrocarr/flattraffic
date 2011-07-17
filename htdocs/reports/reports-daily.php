@@ -7,6 +7,7 @@
 class page_output
 {
 	var $obj_table;
+	var $obj_ui;
 
 	
 	function check_permissions()
@@ -45,9 +46,9 @@ class page_output
 		$this->obj_table->tablename	= "report_networks";
 
 		// define all the columns and structure
-		$this->obj_table->add_column("standard", "date", "cache_traffic.date");
-		$this->obj_table->add_column("standard", "bytes_received", "SUM(cache_traffic.bytes_received)");
-		$this->obj_table->add_column("standard", "bytes_sent", "SUM(cache_traffic.bytes_sent)");
+		$this->obj_table->add_column("date", "date", "cache_traffic.date");
+		$this->obj_table->add_column("bytes", "bytes_received", "SUM(cache_traffic.bytes_received)");
+		$this->obj_table->add_column("bytes", "bytes_sent", "SUM(cache_traffic.bytes_sent)");
 
 		// defaults
 		$this->obj_table->columns		= array("date", "bytes_received", "bytes_sent");
@@ -67,6 +68,12 @@ class page_output
 
 
 
+		/*
+			UI controls
+		*/
+
+		$this->obj_ui	= New traffic_ui;
+
 		return 1;
 	}
 
@@ -76,6 +83,7 @@ class page_output
 
 		print "<p>This report displays traffic usage per network.</p>";
 
+		$this->obj_ui->filter_period_range();
 
 		$this->obj_table->render_table_html();
 	

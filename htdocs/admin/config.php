@@ -75,6 +75,24 @@ class page_output
 
 
 
+		// data tidy
+		$structure = NULL;
+		$structure["fieldname"]					= "TRUNCATE_DB_LOCAL";
+		$structure["type"]					= "checkbox";
+		$structure["options"]["label"]				= lang_trans("help_truncate_db_local");
+		$structure["options"]["no_translate_fieldname"]		= "yes";
+		$this->obj_form->add_input($structure);
+
+		$structure = NULL;
+		$structure["fieldname"]					= "TRUNCATE_DB_UNMATCHED";
+		$structure["type"]					= "checkbox";
+		$structure["options"]["label"]				= lang_trans("help_truncate_db_unmatched");
+		$structure["options"]["no_translate_fieldname"]		= "yes";
+		$this->obj_form->add_input($structure);
+
+
+
+
 		// upstream billing
 		$structure = NULL;
 		$structure["fieldname"]					= "UPSTREAM_BILLING";
@@ -182,6 +200,7 @@ class page_output
 		
 		// define subforms
 		$this->obj_form->subforms["config_netflow"]		= array("SERVICE_TRAFFIC_DB_TYPE", "SERVICE_TRAFFIC_DB_HOST", "SERVICE_TRAFFIC_DB_NAME", "SERVICE_TRAFFIC_DB_USERNAME", "SERVICE_TRAFFIC_DB_PASSWORD");
+		$this->obj_form->subforms["config_truncate"]		= array("TRUNCATE_DB_LOCAL", "TRUNCATE_DB_UNMATCHED");
 		$this->obj_form->subforms["config_upstream"]		= array("UPSTREAM_BILLING", "UPSTREAM_BILLING_MODE", "UPSTREAM_BILLING_REPEAT_DATE");
 		$this->obj_form->subforms["config_stats"]		= array("STATS_REPORT_OVERVIEW", "STATS_REPORT_PERUSER", "STATS_REPORT_RAW", "STATS_INCLUDE_UNMATCHED", "STATS_INCLUDE_RDNS");
 		$this->obj_form->subforms["config_contributions"]	= array("PHONE_HOME");

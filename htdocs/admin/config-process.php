@@ -27,6 +27,9 @@ if (user_permissions_get("admin"))
 	
 	$data["UPSTREAM_BILLING_MODE"]		= @security_form_input_predefined("any", "UPSTREAM_BILLING_MODE", 1, "");
 	$data["UPSTREAM_BILLING_REPEAT_DATE"]	= @security_form_input_predefined("int", "UPSTREAM_BILLING_REPEAT_DATE", 1, "");
+	
+	$data["TRUNCATE_DB_LOCAL"]		= @security_form_input_predefined("checkbox", "TRUNCATE_DB_LOCAL", 1, "");
+	$data["TRUNCATE_DB_UNMATCHED"]		= @security_form_input_predefined("checkbox", "TRUNCATE_DB_UNMATCHED", 1, "");
 
 	$data["SERVICE_TRAFFIC_DB_TYPE"]	= @security_form_input_predefined("any", "SERVICE_TRAFFIC_DB_TYPE", 1, "");
 	$data["SERVICE_TRAFFIC_DB_HOST"]	= @security_form_input_predefined("any", "SERVICE_TRAFFIC_DB_HOST", 0, "");

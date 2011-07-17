@@ -49,7 +49,7 @@ class traffic_ui
 		{
 			$total = $obj_sql_cache->data[0]["bytes"];
 
-			format_msgbox("info", "<p>In the period from ".time_format_humandate($obj_report->date_start) ." to ". time_format_humandate($obj_report->date_end) ." there has been combined usage of ". format_size_human($total) ." traffic.</p>");
+			format_msgbox("info", "<p>In the period from ".time_format_humandate($this->date_start) ." to ". time_format_humandate($this->date_end) ." there has been combined usage of ". format_size_human($total) ." traffic.</p>");
 
 			return $total;
 		}
@@ -90,6 +90,64 @@ class traffic_ui
 
 	} // end of status_cache
 
+
+	/*
+		filter_period_range
+
+		Provides a filter form for selecting the period to display data for.
+	*/
+
+	function filter_period_range()
+	{
+		log_write("debug", "traffic_ui", "Executing filter_period_range()");
+
+
+		/*
+			Fetch date ranges
+		*/
+
+		$obj_traffic = New traffic_reports;
+		$obj_traffic->fetch_periods();
+
+
+		/*
+			Define Form Structure
+		*/
+
+		$form		= New form_input;
+
+		$form->action	= "reports/filter_period_range.php";
+		$form->method	= "post";
+
+		$structure = NULL;
+		$structure["name"]	= "period_range";
+		$structure["type"]	= "dropdown";
+
+
+		/*
+			Render Form
+		*/
+
+		print "<table width=\"100%\" class=\"table_highlight_info\">";
+		print "<tr>";
+			print "<td>";
+			print "<p><b>Selected Period: ". time_format_humandate($this->date_start) ." to ". time_format_humandate($this->date_end) ."</b></p>";
+
+			print "<form method=\"". $form->method ."\" action=\"". $form->action ."\">";
+
+			$form->render_field("period_range");
+			$form->render_field("page");
+			$form->render_field("submit");
+
+			print "</form>";
+
+			print "</td>";
+		print "</tr>";
+		print "</table>";
+		print "<br>";
+
+
+	} // end of filter_period_range
 
 } // end of traffic_ui class
 
