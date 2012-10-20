@@ -345,9 +345,26 @@ class traffic_reports
 
 		log_write("debug", "traffic_reports", "Establishing and clearing cache_traffic MEMORY table");
 
+		$obj_sql_cache	= New sql_query;
 
 
-		$obj_sql_cache			= New sql_query;
+
+
+		/*
+			Clear Data - we have differing modes for this, depending on whether
+			the server has lots of RAM or needs to conserve as much as possible.
+
+			max_speed
+			Store all recently generated cache information in memory for multiple date periods, this
+			makes it easier to jump back and forth between periods.
+
+			min_ram
+			Only cache the current period in memory table, delete the data in it between each reload
+
+
+			TODO: Complete implementation of this, currently the reports assume the cache_traffic table
+			is only for the current month, we should consider fixing this.
+		*/
 
 		$obj_sql_cache->string		= "TRUNCATE TABLE `cache_traffic`";
 		
@@ -372,6 +389,14 @@ class traffic_reports
 
 */
 
+		// delete protocol stats
+		$obj_sql_cache->string		= "TRUNCATE TABLE `cache_protocols`";
+		
+		if (!$obj_sql_cache->execute())
+		{
+			log_write("error", "traffic_reports", "Unable to clear memory cache tables (PROTOCOLS)");
+			return 0;
+		}
 
 
 		// delete reverse DNS resolutions
@@ -438,11 +463,12 @@ class traffic_reports
 			$row_delete = array();
 
 			// query traffic database
+			//$this->obj_db_traffic->string	= "SELECT id, src_addr, dst_addr, octets as bytes FROM traffic WHERE received >= '". $date ."' AND received <= DATE_ADD('". $date ."', INTERVAL 1 DAY) LIMIT 0, 1000";
 			$this->obj_db_traffic->string	= "SELECT id, src_addr, dst_addr, SUM(octets) as bytes FROM traffic WHERE received >= '". $date ."' AND received <= DATE_ADD('". $date ."', INTERVAL 1 DAY) GROUP BY src_addr, dst_addr ";
 			$this->obj_db_traffic->execute();
 
 
-			$data_raw = array();
+			$data_traffic_raw = array();
 			
 
 			if ($this->obj_db_traffic->num_rows())
@@ -487,12 +513,12 @@ class traffic_reports
 					if ($local_src && !$local_dst)
 					{
 						// source IP is a local range, destination is an external range
-						$data_raw[ $local_src ][ $data_row["src_addr"] ]["sent"] += $data_row["bytes"];
+						$data_traffic_raw[ $local_src ][ $data_row["src_addr"] ]["sent"] += $data_row["bytes"];
 					}
 					elseif ($local_dst && !$local_src)
 					{
 						// destination IP is a local range, source is a external range
-						$data_raw[ $local_dst ][ $data_row["dst_addr"] ]["received"] += $data_row["bytes"];
+						$data_traffic_raw[ $local_dst ][ $data_row["dst_addr"] ]["received"] += $data_row["bytes"];
 					}
 					elseif ($local_dst && $local_src)
 					{
@@ -501,7 +527,7 @@ class traffic_reports
 						
 						if ($GLOBALS["config"]["STATS_INCLUDE_UNMATCHED"])
 						{
-							$data_raw[0]["local"] += $data_row["bytes"];
+							$data_traffic_raw[0]["local"] += $data_row["bytes"];
 						}
 
 						// should we delete this row?
@@ -518,7 +544,7 @@ class traffic_reports
 
 						if ($GLOBALS["config"]["STATS_INCLUDE_UNMATCHED"])
 						{
-							$data_raw[0]["unmatched"] += $data_row["bytes"];
+							$data_traffic_raw[0]["unmatched"] += $data_row["bytes"];
 						}
 
 						// should we delete this row?
@@ -555,15 +581,15 @@ class traffic_reports
 			log_write("debug", "traffic_reports", "Generating cached records....");
 
 
-			foreach (array_keys($data_raw) as $id_network)
+			foreach (array_keys($data_traffic_raw) as $id_network)
 			{
-				foreach (array_keys($data_raw[ $id_network ]) as $ipaddress)
+				foreach (array_keys($data_traffic_raw[ $id_network ]) as $ipaddress)
 				{
 					/*
 						Insert traffic into cache
 					*/
 
-					$obj_sql_cache->string	= "INSERT INTO `cache_traffic` (id_network, date, ipaddress, bytes_received, bytes_sent) VALUES ('". $id_network ."', '". $date ."', '". $ipaddress ."', '". $data_raw[ $id_network ][$ipaddress]["received"] ."', '". $data_raw[ $id_network ][$ipaddress]["sent"] ."')";
+					$obj_sql_cache->string	= "INSERT INTO `cache_traffic` (id_network, date, ipaddress, bytes_received, bytes_sent) VALUES ('". $id_network ."', '". $date ."', '". $ipaddress ."', '". $data_traffic_raw[ $id_network ][$ipaddress]["received"] ."', '". $data_traffic_raw[ $id_network ][$ipaddress]["sent"] ."')";
 					$obj_sql_cache->execute();
 
 	
@@ -586,7 +612,7 @@ class traffic_reports
 
 
 			// clear data
-			unset($data_raw);
+			unset($data_traffic_raw);
 			unset($this->obj_db_traffic->data);
 			unset($this->obj_db_traffic->data_num_rows);
 
