@@ -30,13 +30,6 @@ $GLOBALS["config"]["app_version"]		= "1.0.0";
 $GLOBALS["config"]["schema_version"]		= "20110604";
 
 
-
-/*
-	Apply required PHP settings
-*/
-ini_set('memory_limit', '512M');
-ini_set('max_execution_time', '240');
-
 /*
 	Inherit User Configuration
 */
