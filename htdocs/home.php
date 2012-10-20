@@ -38,7 +38,7 @@ else
 		function render_html()
 		{
 			print "<h3>OVERVIEW</h3>";
-			print "<p>Welcome to <a target=\"new\" href=\"http://www.amberdms.com/flattraffic\">FlatTraffic</a>, an open-source, PHP web-based netflow traffic application for reporting on data usage by IP/range.</p>";
+			print "<p>Welcome to <a target=\"new\" href=\"https://projects.jethrocarr.com/p/oss-flattraffic/\">FlatTraffic</a>, an open-source, PHP web-based netflow traffic application for reporting on data usage by IP/range.</p>";
 
 			if (!empty($GLOBALS["config"]["SERVICE_TRAFFIC_DB_NAME"]) && !empty($GLOBALS["config"]["STATS_REPORT_OVERVIEW"]))
 			{

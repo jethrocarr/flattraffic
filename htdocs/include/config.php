@@ -34,9 +34,7 @@ $GLOBALS["config"]["schema_version"]		= "20110604";
 /*
 	Apply required PHP settings
 */
-ini_set('memory_limit', '256M');		// note that Amberphplib doesn't need much RAM apart from when
-						// doing source diffs or graph generation.
-
+ini_set('memory_limit', '256M');
 
 
 /*

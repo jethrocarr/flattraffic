@@ -4,9 +4,9 @@
 
 	Web-based netflow traffic reporting and analysis tool.
 
-	(c) Copyright 2011 Amberdms Ltd
+	(c) Copyright 2012 Jethro Carr
 
-	www.amberdms.com/flattraffic
+	https://projects.jethrocarr.com/p/oss-flattraffic/
 
 
 	This program is free software: you can redistribute it and/or modify
@@ -327,7 +327,7 @@ if (!preg_match('/^user/', $page))
 	<table width="100%">
 	<tr>
 		<td align="left">
-		<p style="font-size: 10px; color: #ffffff;">FlatTraffic is licensed under the AGPL, developed by <a style="color: #ffffff" href="http://www.amberdms.com/flattraffic">Amberdms</a></p>
+		<p style="font-size: 10px; color: #ffffff;">FlatTraffic is licensed under the AGPL, developed by <a style="color: #ffffff" href="https://projects.jethrocarr.com/p/oss-flattraffic/">Jethro Carr</a></p>
 		</td>
 
 		<td align="right">

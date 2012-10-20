@@ -106,22 +106,52 @@ class traffic_ui
 			Fetch date ranges
 		*/
 
-		$obj_traffic = New traffic_reports;
-		$obj_traffic->fetch_periods();
+		$obj_traffic 	= New traffic_reports;
+		$periods 	= $obj_traffic->fetch_periods();
 
 
 		/*
 			Define Form Structure
 		*/
 
+
+		// form header
 		$form		= New form_input;
 
 		$form->action	= "reports/filter_period_range.php";
 		$form->method	= "post";
 
+
+		// period selection
 		$structure = NULL;
-		$structure["name"]	= "period_range";
-		$structure["type"]	= "dropdown";
+		$structure["fieldname"]		= "period_range";
+		$structure["type"]		= "dropdown";
+		$structure["defaultvalue"]	= $this->date_start;
+
+		foreach ($periods as $period)
+		{
+			$structure["values"][]				= $period["start"];
+			$structure["translations"][ $period["start"] ]	= time_format_humandate($period["start"]) ." to ". time_format_humandate($period["end"]);
+		}
+
+		$form->add_input($structure);
+
+
+
+		// form submit components
+		$structure = NULL;
+		$structure["fieldname"]		= "submit";
+		$structure["type"]		= "submit";
+		$structure["defaultvalue"]	= "ui_button_change_period";
+		$form->add_input($structure);
+
+		$structure = NULL;
+		$structure["fieldname"]		= "page";
+		$structure["type"]		= "hidden";
+		$structure["defaultvalue"]	= $_GET["page"];
+		$form->add_input($structure);
+
+
 
 
 		/*
@@ -136,6 +166,8 @@ class traffic_ui
 			print "<form method=\"". $form->method ."\" action=\"". $form->action ."\">";
 
 			$form->render_field("period_range");
+
+			print "<br><br>";
 			$form->render_field("page");
 			$form->render_field("submit");
 

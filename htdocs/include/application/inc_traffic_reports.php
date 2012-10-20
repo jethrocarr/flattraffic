@@ -131,19 +131,23 @@ class traffic_reports
 
 
 		/*
-			Fetch limits -earliest and oldest records
+			Fetch first record - from here, we assume that the DB has records up to the current date
+			and proceed to generate period ranges from the first date.
 		*/
 
-
-		// first
-		$this->obj_db_traffic->string	= "SELECT received FROM traffic ORDER BY received ASC LIMIT 1";
+		$this->obj_db_traffic->string	= "SELECT UNIX_TIMESTAMP(received) as value FROM traffic LIMIT 1";
 		$this->obj_db_traffic->execute();
 		
 		if ($this->obj_db_traffic->num_rows())
 		{
 			$this->obj_db_traffic->fetch_array();
 
-			$date_first = $this->obj_db_traffic->data[0]["received"];
+			$date_first 		= date("Y-m-d", $this->obj_db_traffic->data[0]["value"]);
+			$date_first_timestamp	= $this->obj_db_traffic->data[0]["value"];
+		}
+		else
+		{
+			log_write("warning", "traffic_reports", "No known start date in traffic database");
 		}
 
 		log_write("debug", "traffic_reports", "Calculated first data point as $date_first");
@@ -151,38 +155,56 @@ class traffic_reports
 
 		/*
 			Generate array of ranges between the limits
+
+			We start at the first timestamp and calulate each period from there.
 		*/
 
 		$periods	= array();
 	
 		while ($date_last_timestamp < time())
 		{
-			// dates
-			$date_first_timestamp	= time_date_to_timestamp($date_first);
-			$date_last_timestamp	= time_date_to_timestamp($date_last);
-		
+			if (!$date_last)
+			{
+				$date_first_array = explode('-', $date_first);
 
-			// generate first period - tricky since first records might not be
-			if ($date_first_array[2] > $GLOBALS["config"]["UPSTREAM_BILLING_REPEAT_DATE"])
-			{
-				// first date is larger than the start date of the billing period
-			//	$date_start	= $date_first_array[0] ."-". $date_first_array[1] ."-". $GLOBALS["config"]["UPSTREAM_BILLING_REPEAT_DATE"];
-			//	$date_end	= sql_get_singlevalue("SELECT DATE_ADD('". $date_start ."', INTERVAL 1 MONTH ) as value");
-			}
-			elseif ($date_first_array[2] < $GLOBALS["config"]["UPSTREAM_BILLING_REPEAT_DATE"])
-			{
-				// first date is less than the period date, this means the first date is for the previous period
+				// generate first period - tricky since first records might not be in line with any specific billing cycle
+				if ($date_first_array[2] > $GLOBALS["config"]["UPSTREAM_BILLING_REPEAT_DATE"])
+				{
+					// first date is larger than the start date of the billing period
+					$date_start	= $date_first_array[0] ."-". $date_first_array[1] ."-". $GLOBALS["config"]["UPSTREAM_BILLING_REPEAT_DATE"];
+					$date_end	= sql_get_singlevalue("SELECT DATE_ADD('". $date_start ."', INTERVAL 1 MONTH ) as value");
+				}
+				elseif ($date_first_array[2] < $GLOBALS["config"]["UPSTREAM_BILLING_REPEAT_DATE"])
+				{
+					// first date is less than the period date, this means the first date is for the *previous* period
+					$date_end	= $date_first_array[0] ."-". $date_first_array[1] ."-". $GLOBALS["config"]["UPSTREAM_BILLING_REPEAT_DATE"];
+					$date_start	= sql_get_singlevalue("SELECT DATE_SUB('". $date_end ."', INTERVAL 1 MONTH ) as value");
+				}
+				else
+				{
+					// first date aligns with the billing period
+					$date_start	= $date_first;
+					$date_end	= sql_get_singlevalue("SELECT DATE_ADD('". $date_start ."', INTERVAL 1 MONTH ) as value");
+				}
 			}
 			else
 			{
-				// first date aligns with the billing period
-			//	$date_start	= $date_first_array[0] ."-". $date_first_array[1] ."-". $GLOBALS["config"]["UPSTREAM_BILLING_REPEAT_DATE"];
-			//	$date_end	= sql_get_singlevalue("SELECT DATE_ADD('". $date_start ."', INTERVAL 1 MONTH ) as value");
-
-
+				// Increment by 1 month
+				$date_start	= $date_last;
+				$date_end	= sql_get_singlevalue("SELECT DATE_ADD('". $date_start ."', INTERVAL 1 MONTH ) as value");
 			}
-		}
+
+			// add to period
+			$periods[ $date_start ]["start"]	= $date_start;
+			$periods[ $date_start ]["end"]		= $date_end;
 		
+			// generate last timestamp
+			$date_last		= $date_end;
+			$date_last_timestamp	= time_date_to_timestamp($date_end);
+		}
+	
+		return $periods;
+
 	} // end of fetch_periods
 
 
@@ -253,6 +275,50 @@ class traffic_reports
 
 
 	/*
+		check_cache
+
+		Checks the cache for the selected period and determines whether or not it should be rebuilt. This decision is made based on:
+
+		1. Whether the cache has records for the first and last date of the selected period.
+		2. Whether the cache has expired.
+
+		Returns
+		0		Cache should be rebuilt for the selected period
+		1		Cache is fine and does not need rebuilding - but you can still do so if desired
+	*/
+
+	function check_cache()
+	{
+		log_write("debug", "traffic_reports", "Executing check_cache()");
+
+
+		// check expiry date
+		if ($GLOBALS["config"]["CACHE_TIME"] > (time() - $GLOBALS["config"]["CACHE_TIMEOUT"]))
+		{
+			// cache has expired
+			return 0;
+		}
+
+
+		// check for records between selected period
+		$sql_obj 		= New sql_query;
+		$sql_obj->string	= "SELECT id FROM cache_traffic WHERE date >= '". $this->date_start ."' AND date <= '". $this->date_end ."'";
+		$sql_obj->execute();
+
+		if ($sql_obj->num_rows())
+		{
+			// records exist in cache for this period
+			return 1;
+		}
+		
+
+		return 0;
+
+	} // end of check_cache
+
+
+
+	/*
 		build_cache
 
 		Reads in data from the raw netflow tables and generates cache inside memory tables in MySQL. All reports
@@ -279,6 +345,8 @@ class traffic_reports
 
 		log_write("debug", "traffic_reports", "Establishing and clearing cache_traffic MEMORY table");
 
+
+
 		$obj_sql_cache			= New sql_query;
 
 		$obj_sql_cache->string		= "TRUNCATE TABLE `cache_traffic`";
@@ -290,6 +358,23 @@ class traffic_reports
 		}
 
 
+/*
+		// delete cached items between selected time period
+		$obj_sql_cache			= New sql_query;
+
+		$obj_sql_cache->string		= "DELETE FROM `cache_traffic` WHERE date <= '". $this->date_start ."' AND date >= '". $this->date_end ."'";
+		
+		if (!$obj_sql_cache->execute())
+		{
+			log_write("error", "traffic_reports", "Unable to clear memory cache tables (TRAFFIC) for selected date period.");
+			return 0;
+		}
+
+*/
+
+
+
+		// delete reverse DNS resolutions
 		$obj_sql_cache->string		= "TRUNCATE TABLE `cache_rdns`";
 		
 		if (!$obj_sql_cache->execute())
