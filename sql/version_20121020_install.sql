@@ -283,11 +283,6 @@ CREATE TABLE IF NOT EXISTS `networks` (
 -- Dumping data for table `networks`
 --
 
-INSERT INTO `networks` (`id`, `ipaddress`, `description`) VALUES
-(1, '10.8.0.0/16', 'Internal Server Ranges'),
-(2, '192.168.1.0/24', 'Unsecured LAN'),
-(3, '203.97.108.26/32', 'phobos');
-
 -- --------------------------------------------------------
 
 --
@@ -335,8 +330,7 @@ CREATE TABLE IF NOT EXISTS `users` (
 --
 
 INSERT INTO `users` (`id`, `username`, `realname`, `password`, `password_salt`, `contact_email`, `time`, `ipaddress`) VALUES
-(1, 'setup', 'Setup Account', '14c2a5c3681b95582c3e01fc19f49853d9cdbb31', 'hctw8lbz3uhxl6sj8ixr', 'support@amberdms.com', 1350206317, 'fdd5:8ac:8ad2:101::1001'),
-(3, 'reports', 'reports', '20a80999a9df94fbd28e13a7e48858ca0dd8327c', '77gefgprzg0ld3d3cjy0', 'developers@amberdms.com', 1307154953, '10.8.5.182');
+(1, 'setup', 'Setup Account', '14c2a5c3681b95582c3e01fc19f49853d9cdbb31', 'hctw8lbz3uhxl6sj8ixr', 'support@amberdms.com', 1350206317, 'fdd5:8ac:8ad2:101::1001');
 
 -- --------------------------------------------------------
 
@@ -407,8 +401,7 @@ CREATE TABLE IF NOT EXISTS `users_permissions` (
 
 INSERT INTO `users_permissions` (`id`, `userid`, `permid`) VALUES
 (1, 1, 2),
-(2, 1, 3),
-(5, 3, 3);
+(2, 1, 3);
 
 -- --------------------------------------------------------
 
