@@ -74,6 +74,14 @@ class page_output
 		// re-sort with PHP to fix ip address ordering
 		usort( $this->obj_table->data, 'sort_natural_ipaddress');
 
+
+		/*
+			UI controls
+		*/
+
+		$this->obj_ui	= New traffic_ui;
+
+
 		return 1;
 	}
 
@@ -83,6 +91,7 @@ class page_output
 
 		print "<p>This report displays traffic usage per network host.</p>";
 
+		$this->obj_ui->filter_period_range();
 
 		$this->obj_table->render_table_html();
 	

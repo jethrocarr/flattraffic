@@ -19,6 +19,8 @@ if (user_permissions_get("admin"))
 		Load Data
 	*/
 
+	$data = array();
+
 	$data["PHONE_HOME"]			= @security_form_input_predefined("checkbox", "PHONE_HOME", 0, "");
 
 	$data["SESSION_TIMEOUT"]		= @security_form_input_predefined("int", "SESSION_TIMEOUT", 1, "");
@@ -27,7 +29,10 @@ if (user_permissions_get("admin"))
 	
 	$data["UPSTREAM_BILLING_MODE"]		= @security_form_input_predefined("any", "UPSTREAM_BILLING_MODE", 1, "");
 	$data["UPSTREAM_BILLING_REPEAT_DATE"]	= @security_form_input_predefined("int", "UPSTREAM_BILLING_REPEAT_DATE", 1, "");
-	
+	$data["BYTECOUNT"]			= @security_form_input_predefined("int", "BYTECOUNT", 1, "");
+
+	$data["PERF_CACHEMODE"]			= @security_form_input_predefined("any", "PERF_CACHEMODE", 1, "");
+
 	$data["TRUNCATE_DB_LOCAL"]		= @security_form_input_predefined("checkbox", "TRUNCATE_DB_LOCAL", 1, "");
 	$data["TRUNCATE_DB_UNMATCHED"]		= @security_form_input_predefined("checkbox", "TRUNCATE_DB_UNMATCHED", 1, "");
 
@@ -104,7 +109,7 @@ if (user_permissions_get("admin"))
 
 		foreach (array_keys($data) as $data_key)
 		{
-			$sql_obj->string = "UPDATE config SET value='". $data[$data_key] ."' WHERE name='$data_key' LIMIT 1";
+			$sql_obj->string = "REPLACE INTO config SET name='$data_key', value='". $data[$data_key] ."'";
 			$sql_obj->execute();
 		}
 

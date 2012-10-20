@@ -42,31 +42,40 @@ class page_output
 		$this->obj_table = New table;
 
 		$this->obj_table->language	= $_SESSION["user"]["lang"];
-		$this->obj_table->tablename	= "report_networks";
+		$this->obj_table->tablename	= "report_protocols";
 
 		// define all the columns and structure
-		$this->obj_table->add_column("standard", "network_ipaddress", "networks.ipaddress");
-		$this->obj_table->add_column("standard", "network_description", "networks.description");
-		$this->obj_table->add_column("bytes", "bytes_received", "SUM(cache_traffic.bytes_received)");
-		$this->obj_table->add_column("bytes", "bytes_sent", "SUM(cache_traffic.bytes_sent)");
+		$this->obj_table->add_column("string", "port", "cache_protocols.port");
+		$this->obj_table->add_column("bytes", "bytes", "cache_protocols.bytes");
 
 		// defaults
-		$this->obj_table->columns		= array("network_ipaddress", "network_description", "bytes_received", "bytes_sent");
-		$this->obj_table->columns_order		= array("network_ipaddress");
+		$this->obj_table->columns		= array("port", "bytes");
+		$this->obj_table->columns_order		= array("port");
 
 		// totals
-		$this->obj_table->total_columns		= array("bytes_received", "bytes_sent");
-		$this->obj_table->total_rows		= array("bytes_received", "bytes_sent");
+		$this->obj_table->total_columns		= array("bytes");
 
 		// assemble query
-		$this->obj_table->sql_obj->prepare_sql_settable("networks");
-		$this->obj_table->sql_obj->prepare_sql_addjoin("LEFT JOIN cache_traffic ON cache_traffic.id_network = networks.id");
-		$this->obj_table->sql_obj->prepare_sql_addfield("networks.id", "");
-		$this->obj_table->sql_obj->prepare_sql_addgroupby("networks.id");
+		$this->obj_table->sql_obj->prepare_sql_settable("cache_protocols");
 
 		// load data
 		$this->obj_table->generate_sql();
 		$this->obj_table->load_data_sql();
+
+		// run query
+		$this->obj_table->render_table_prepare();
+
+
+		/*
+			Re-labelling
+		*/
+		for ($i=0; $i <= $this->obj_table->data_num_rows; $i++)
+		{
+			if ($this->obj_table->data[$i]["port"] == "0")
+			{
+				$this->obj_table->data_render[$i]["port"] = "ICMP";
+			}
+		}
 
 
 		/*
@@ -81,9 +90,9 @@ class page_output
 
 	function render_html()
 	{
-		print "<h3>REPORTS :: NETWORKS</h3>";
+		print "<h3>REPORTS :: PROTOCOLS</h3>";
 
-		print "<p>This report displays traffic usage per network.</p>";
+		print "<p>This report displays traffic usage by protocol for the selected billing period.</p>";
 
 		$this->obj_ui->filter_period_range();
 

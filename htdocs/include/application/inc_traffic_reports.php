@@ -374,7 +374,6 @@ class traffic_reports
 			return 0;
 		}
 
-
 /*
 		// delete cached items between selected time period
 		$obj_sql_cache			= New sql_query;
@@ -421,6 +420,114 @@ class traffic_reports
 		}
 
 
+		/*
+			Generate Protocol Summary
+		*/
+
+		$data_protocol_raw = array();
+
+		// generate date range
+		$tmp_date		= $this->date_start;
+		$date_range		= array();
+
+		$date_range[]		= $this->date_start;
+
+		while ($tmp_date != $this->date_end)
+		{
+			$tmp_date	= explode("-", $tmp_date);
+			$tmp_date 	= date("Y-m-d", mktime(0,0,0,$tmp_date[1], ($tmp_date[2] +1), $tmp_date[0]));
+
+			$date_range[]	= $tmp_date;
+		}
+
+		for ($i=0; $i < count($date_range); $i++)
+		{
+			// strip "-" charactor
+			$date_range[$i] = str_replace("-", "", $date_range[$i]);
+		}
+
+
+		// store reverse DNS
+		$addresses_resolved = array();
+
+
+		foreach ($date_range as $date)
+		{
+			// query protocol data
+			$this->obj_db_traffic->string	= "SELECT src_port, dst_port, protocol, SUM(octets) as bytes FROM `traffic` WHERE received >= '". $date ."' AND received <= DATE_ADD('". $date ."', INTERVAL 1 DAY) GROUP BY protocol, src_port, dst_port";
+			$this->obj_db_traffic->execute();
+
+			if ($this->obj_db_traffic->num_rows())
+			{
+				$this->obj_db_traffic->fetch_array();
+
+				foreach ($this->obj_db_traffic->data as $data_row)
+				{
+					// determine direction of traffic based on the lowest port. This is a pretty hacky way of doing it
+					// but works when talking to services < 1024, as well as non-reserved service ports
+
+					if ($data_row["src_port"] < 1024)
+					{
+						$data_protocol_raw[ $data_row["src_port"] ] += $data_row["bytes"];
+
+					}
+					elseif ($data_row["dst_port"] < 1024)
+					{
+						$data_protocol_raw[ $data_row["dst_port"] ] += $data_row["bytes"];
+					}
+					elseif ($data_row["dst_port"] < 49152)
+					{
+						// registered ports
+						$data_protocol_raw[ $data_row["dst_port"] ] += $data_row["bytes"];
+					}
+					elseif ($data_row["src_port"] < 49152)
+					{
+						// registered ports
+						$data_protocol_raw[ $data_row["src_port"] ] += $data_row["bytes"];
+					}
+					else
+					{
+						// Dynamic, private or ephemeral ports
+						// We group these all into one
+						$data_protocol_raw["65535"] += $data_row["bytes"];
+					}
+				}
+			}
+		
+			unset($obj_db_traffic->data);
+			unset($obj_db_traffic->data_num_rows);
+		}
+
+		// sanity - we don't want 100k+ logs in debug
+		$debug = 0;
+		if (!empty($_SESSION["user"]["debug"]))
+		{
+			$debug = 1;
+			$_SESSION["user"]["debug"] = 0;
+		}
+
+		// insert into cache
+		foreach (array_keys($data_protocol_raw) as $port)
+		{
+			// only mark high ports larger than 10MB to avoid clogging up with noise
+			if ($data_protocol_raw[ $port ] > 10000000 || $port == 65535)
+			{
+				$obj_sql_cache->string	= "INSERT INTO `cache_protocols` (port, bytes) VALUES ('". $port ."', '". $data_protocol_raw[ $port ] ."')";
+				$obj_sql_cache->execute();
+			}
+			else
+			{
+				$data_protocol_raw["65535"] = $data_protocol_raw[ $port ];
+			}
+		}
+
+		if ($debug)
+		{
+			$_SESSION["user"]["debug"] = 1;
+		}
+
+		unset($data_protocol_raw);
+
 
 		/*
 			Query Traffic Database
@@ -462,13 +569,14 @@ class traffic_reports
 			// unwanted.
 			$row_delete = array();
 
+
+
 			// query traffic database
-			//$this->obj_db_traffic->string	= "SELECT id, src_addr, dst_addr, octets as bytes FROM traffic WHERE received >= '". $date ."' AND received <= DATE_ADD('". $date ."', INTERVAL 1 DAY) LIMIT 0, 1000";
 			$this->obj_db_traffic->string	= "SELECT id, src_addr, dst_addr, SUM(octets) as bytes FROM traffic WHERE received >= '". $date ."' AND received <= DATE_ADD('". $date ."', INTERVAL 1 DAY) GROUP BY src_addr, dst_addr ";
 			$this->obj_db_traffic->execute();
 
 
-			$data_traffic_raw = array();
+			$data_traffic_raw	= array();
 			
 
 			if ($this->obj_db_traffic->num_rows())

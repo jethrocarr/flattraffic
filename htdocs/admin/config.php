@@ -73,6 +73,14 @@ class page_output
 		$structure["options"]["no_translate_fieldname"]		= "yes";
 		$this->obj_form->add_input($structure);
 
+	
+		// performance options
+		$structure = NULL;
+		$structure["fieldname"]					= "PERF_CACHEMODE";
+		$structure["type"]					= "radio";
+		$structure["values"]					= array("max_speed", "min_ram");
+		$structure["options"]["no_translate_fieldname"]		= "yes";
+		$this->obj_form->add_input($structure);
 
 
 		// data tidy
@@ -113,6 +121,14 @@ class page_output
 		$structure["options"]["width"]				= "100";
 		$structure["options"]["maxlength"]			= "2";
 		$structure["options"]["no_translate_fieldname"]		= "yes";
+		$this->obj_form->add_input($structure);
+
+		$structure = NULL;
+		$structure["fieldname"]					= "BYTECOUNT";
+		$structure["type"]					= "radio";
+		$structure["values"]					= array("1000", "1024");
+		$structure["options"]["no_translate_fieldname"]		= "yes";
+		$structure["defaultvalue"]				= "1024";
 		$this->obj_form->add_input($structure);
 
 
@@ -159,7 +175,7 @@ class page_output
 		$structure = NULL;
 		$structure["fieldname"]				= "PHONE_HOME";
 		$structure["type"]				= "checkbox";
-		$structure["options"]["label"]			= "Phone home to Amberdms with application, OS and PHP version so we can better improve this software. (all information is anonymous and private)";
+		$structure["options"]["label"]			= "Phone home to the developers with application, OS and PHP version so we can better improve this software. (all information is anonymous and private)";
 		$structure["options"]["no_translate_fieldname"]	= "yes";
 		$this->obj_form->add_input($structure);
 
@@ -201,7 +217,8 @@ class page_output
 		// define subforms
 		$this->obj_form->subforms["config_netflow"]		= array("SERVICE_TRAFFIC_DB_TYPE", "SERVICE_TRAFFIC_DB_HOST", "SERVICE_TRAFFIC_DB_NAME", "SERVICE_TRAFFIC_DB_USERNAME", "SERVICE_TRAFFIC_DB_PASSWORD");
 		$this->obj_form->subforms["config_truncate"]		= array("TRUNCATE_DB_LOCAL", "TRUNCATE_DB_UNMATCHED");
-		$this->obj_form->subforms["config_upstream"]		= array("UPSTREAM_BILLING", "UPSTREAM_BILLING_MODE", "UPSTREAM_BILLING_REPEAT_DATE");
+//		$this->obj_form->subforms["config_performance"]		= array("PERF_CACHEMODE");
+		$this->obj_form->subforms["config_upstream"]		= array("UPSTREAM_BILLING", "UPSTREAM_BILLING_MODE", "UPSTREAM_BILLING_REPEAT_DATE", "BYTECOUNT");
 		$this->obj_form->subforms["config_stats"]		= array("STATS_REPORT_OVERVIEW", "STATS_REPORT_PERUSER", "STATS_REPORT_RAW", "STATS_INCLUDE_UNMATCHED", "STATS_INCLUDE_RDNS");
 		$this->obj_form->subforms["config_contributions"]	= array("PHONE_HOME");
 //		$this->obj_form->subforms["config_security"]		= array("SESSION_TIMEOUT", "BLACKLIST_ENABLE", "BLACKLIST_LIMIT");
