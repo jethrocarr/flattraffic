@@ -1294,6 +1294,26 @@ function dir_list_contents($directory='.')
 */
 
 
+
+/*
+	ip_type_detect
+
+	Returns the type of IP address for the specified value (v4 or v6). This function assumes a
+	single address is being provided only (no ranges/subnets).
+
+	Returns
+	0		Failure/Error
+	4		IPv4
+	6		IPv6
+*/
+function ip_type_detect($address)
+{
+	log_debug("inc_misc", "Executing ip_type_detect($address)");
+     
+     	return strpos($address, ":") === false ? 4 : 6;
+}
+
+
 /*
 	ipv4_subnet_members
 

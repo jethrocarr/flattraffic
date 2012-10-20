@@ -1489,7 +1489,16 @@ class table
 					if ($content)
 					{
 						$file_size_types = array(" Bytes", " KB", " MB", " GB", " TB");
-						$content = round($content/pow(1024, ($z = floor(log($content, 1024)))), 2) . $file_size_types[$z];
+
+						if ($GLOBAL["config"]["BYTECOUNT"])
+						{
+							$content = round($content/pow($GLOBAL["config"]["BYTECOUNT"], ($z = floor(log($content, $GLOBAL["config"]["BYTECOUNT"])))), 2) . $file_size_types[$z];
+						}
+						else
+						{
+							// use 1024 bytes as a default
+							$content = round($content/pow(1024, ($z = floor(log($content, 1024)))), 2) . $file_size_types[$z];
+						}
 					}
 				}
 
