@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Oct 20, 2012 at 09:35 PM
+-- Generation Time: Nov 13, 2012 at 12:39 AM
 -- Server version: 5.0.95
 -- PHP Version: 5.3.10
 
@@ -26,20 +26,28 @@ USE `flattraffic`;
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `cache_protocols`
+--
+
+CREATE TABLE IF NOT EXISTS `cache_protocols` (
+  `id` int(11) NOT NULL auto_increment,
+  `port` int(6) NOT NULL,
+  `bytes` bigint(20) NOT NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `cache_rdns`
 --
 
 CREATE TABLE IF NOT EXISTS `cache_rdns` (
   `id` int(11) NOT NULL auto_increment,
-  `ipaddress` varchar(64) NOT NULL,
-  `reverse` varchar(255) NOT NULL,
+  `ipaddress` varchar(64) character set latin1 NOT NULL,
+  `reverse` varchar(255) character set latin1 NOT NULL,
   PRIMARY KEY  (`id`)
-) ENGINE=MEMORY DEFAULT CHARSET=latin1 COMMENT='Cache of reverse DNS lookups' AUTO_INCREMENT=1 ;
-
---
--- Dumping data for table `cache_rdns`
---
-
+) ENGINE=MEMORY  DEFAULT CHARSET=utf8 COMMENT='Cache of reverse DNS lookups' AUTO_INCREMENT=1 ;
 
 -- --------------------------------------------------------
 
@@ -51,15 +59,11 @@ CREATE TABLE IF NOT EXISTS `cache_traffic` (
   `id` int(10) unsigned NOT NULL auto_increment,
   `id_network` int(10) unsigned NOT NULL,
   `date` date NOT NULL,
-  `ipaddress` varchar(64) NOT NULL,
+  `ipaddress` varchar(255) NOT NULL,
   `bytes_received` bigint(20) unsigned NOT NULL,
   `bytes_sent` bigint(20) unsigned NOT NULL,
   PRIMARY KEY  (`id`)
-) ENGINE=MEMORY DEFAULT CHARSET=latin1 COMMENT='Cache space for traffic statistics' AUTO_INCREMENT=1 ;
-
---
--- Dumping data for table `cache_traffic`
---
+) ENGINE=MEMORY  DEFAULT CHARSET=utf8 COMMENT='Cache space for traffic statistics' AUTO_INCREMENT=1 ;
 
 
 -- --------------------------------------------------------
@@ -84,7 +88,8 @@ INSERT INTO `config` (`name`, `value`) VALUES
 ('AUTH_METHOD', 'sql'),
 ('BLACKLIST_ENABLE', 'enabled'),
 ('BLACKLIST_LIMIT', '10'),
-('CACHE_TIME', '1349868327'),
+('BYTECOUNT', '1000'),
+('CACHE_TIME', '1350753009'),
 ('CACHE_TIMEOUT', '3600'),
 ('DATA_STORAGE_LOCATION', 'use_database'),
 ('DATA_STORAGE_METHOD', 'database'),
@@ -92,7 +97,8 @@ INSERT INTO `config` (`name`, `value`) VALUES
 ('LANGUAGE_DEFAULT', 'en_us'),
 ('LANGUAGE_LOAD', 'preload'),
 ('PATH_TMPDIR', '/tmp'),
-('PHONE_HOME', '0'),
+('PERF_CACHEMODE', 'max_speed'),
+('PHONE_HOME', '1'),
 ('PHONE_HOME_TIMER', '0'),
 ('SCHEMA_VERSION', '20121020'),
 ('SERVICE_TRAFFIC_DB_HOST', 'localhost'),
@@ -100,8 +106,9 @@ INSERT INTO `config` (`name`, `value`) VALUES
 ('SERVICE_TRAFFIC_DB_PASSWORD', 'sample_password'),
 ('SERVICE_TRAFFIC_DB_TYPE', 'mysql_netflow_single'),
 ('SERVICE_TRAFFIC_DB_USERNAME', 'root'),
+('SESSION_TIMEOUT', '7200'),
 ('STATS_INCLUDE_RDNS', '1'),
-('STATS_INCLUDE_UNMATCHED', '0'),
+('STATS_INCLUDE_UNMATCHED', '1'),
 ('STATS_REPORT_OVERVIEW', '1'),
 ('STATS_REPORT_PERUSER', '1'),
 ('STATS_REPORT_RAW', '1'),
@@ -238,7 +245,7 @@ CREATE TABLE IF NOT EXISTS `menu` (
   `link` varchar(50) NOT NULL,
   `permid` int(11) NOT NULL default '0',
   PRIMARY KEY  (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=189 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=190 ;
 
 --
 -- Dumping data for table `menu`
@@ -263,7 +270,8 @@ INSERT INTO `menu` (`id`, `priority`, `parent`, `topic`, `link`, `permid`) VALUE
 (185, 301, 'menu_networks', '', 'networks/networks.php', 2),
 (186, 310, 'menu_networks', '', 'networks/view.php', 2),
 (187, 310, 'menu_networks', '', 'networks/add.php', 2),
-(188, 310, 'menu_networks', '', 'networks/delete.php', 2);
+(188, 310, 'menu_networks', '', 'networks/delete.php', 2),
+(189, 210, 'menu_reports', 'menu_reports_protocols', 'reports/reports-protocols.php', 3);
 
 -- --------------------------------------------------------
 
@@ -278,6 +286,7 @@ CREATE TABLE IF NOT EXISTS `networks` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=4 ;
 
+-- --------------------------------------------------------
 
 --
 -- Table structure for table `permissions`
@@ -334,7 +343,7 @@ INSERT INTO `users` (`id`, `username`, `realname`, `password`, `password_salt`, 
 
 CREATE TABLE IF NOT EXISTS `users_blacklist` (
   `id` int(11) NOT NULL auto_increment,
-  `ipaddress` varchar(15) NOT NULL,
+  `ipaddress` varchar(255) NOT NULL,
   `failedcount` int(11) NOT NULL default '0',
   `time` bigint(20) unsigned NOT NULL default '0',
   PRIMARY KEY  (`id`)
@@ -357,18 +366,13 @@ CREATE TABLE IF NOT EXISTS `users_options` (
   `name` varchar(255) NOT NULL,
   `value` varchar(255) NOT NULL,
   PRIMARY KEY  (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=225 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=10 ;
 
 --
 -- Dumping data for table `users_options`
 --
 
 INSERT INTO `users_options` (`id`, `userid`, `name`, `value`) VALUES
-(208, 3, 'lang', 'en_us'),
-(209, 3, 'dateformat', 'yyyy-mm-dd'),
-(210, 3, 'shrink_tableoptions', 'on'),
-(211, 3, 'debug', 'on'),
-(212, 3, 'concurrent_logins', 'on'),
 (219, 1, 'lang', 'en_us'),
 (220, 1, 'dateformat', 'dd-mm-yyyy'),
 (221, 1, 'shrink_tableoptions', ''),
@@ -407,12 +411,10 @@ CREATE TABLE IF NOT EXISTS `users_sessions` (
   `id` int(11) NOT NULL auto_increment,
   `userid` int(11) NOT NULL,
   `authkey` varchar(40) NOT NULL,
-  `ipaddress` varchar(255) NOT NULL,
+  `ipv4` varchar(16) NOT NULL,
+  `ipv6` varchar(255) NOT NULL,
   `time` bigint(20) NOT NULL,
   PRIMARY KEY  (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=6 ;
 
---
--- Dumping data for table `users_sessions`
---
 
