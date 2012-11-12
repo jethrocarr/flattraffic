@@ -16,12 +16,11 @@ SET SQL_MODE="NO_AUTO_VALUE_ON_ZERO";
 /*!40101 SET NAMES utf8 */;
 
 --
--- Database: `oss-flattraffic`
+-- Database
 --
 
 CREATE DATABASE `flattraffic` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 USE `flattraffic`;
-
 
 
 -- --------------------------------------------------------
@@ -35,7 +34,7 @@ CREATE TABLE IF NOT EXISTS `cache_rdns` (
   `ipaddress` varchar(64) NOT NULL,
   `reverse` varchar(255) NOT NULL,
   PRIMARY KEY  (`id`)
-) ENGINE=MEMORY DEFAULT CHARSET=utf8 COMMENT='Cache of reverse DNS lookups' AUTO_INCREMENT=1 ;
+) ENGINE=MEMORY DEFAULT CHARSET=latin1 COMMENT='Cache of reverse DNS lookups' AUTO_INCREMENT=1 ;
 
 --
 -- Dumping data for table `cache_rdns`
@@ -56,7 +55,7 @@ CREATE TABLE IF NOT EXISTS `cache_traffic` (
   `bytes_received` bigint(20) unsigned NOT NULL,
   `bytes_sent` bigint(20) unsigned NOT NULL,
   PRIMARY KEY  (`id`)
-) ENGINE=MEMORY DEFAULT CHARSET=utf8 COMMENT='Cache space for traffic statistics' AUTO_INCREMENT=1 ;
+) ENGINE=MEMORY DEFAULT CHARSET=latin1 COMMENT='Cache space for traffic statistics' AUTO_INCREMENT=1 ;
 
 --
 -- Dumping data for table `cache_traffic`
@@ -93,9 +92,9 @@ INSERT INTO `config` (`name`, `value`) VALUES
 ('LANGUAGE_DEFAULT', 'en_us'),
 ('LANGUAGE_LOAD', 'preload'),
 ('PATH_TMPDIR', '/tmp'),
-('PHONE_HOME', '1'),
-('PHONE_HOME_TIMER', '1307153486'),
-('SCHEMA_VERSION', '20110604'),
+('PHONE_HOME', '0'),
+('PHONE_HOME_TIMER', '0'),
+('SCHEMA_VERSION', '20121020'),
 ('SERVICE_TRAFFIC_DB_HOST', 'localhost'),
 ('SERVICE_TRAFFIC_DB_NAME', 'sample_netflow'),
 ('SERVICE_TRAFFIC_DB_PASSWORD', 'sample_password'),
@@ -279,11 +278,6 @@ CREATE TABLE IF NOT EXISTS `networks` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=4 ;
 
---
--- Dumping data for table `networks`
---
-
--- --------------------------------------------------------
 
 --
 -- Table structure for table `permissions`
@@ -330,7 +324,7 @@ CREATE TABLE IF NOT EXISTS `users` (
 --
 
 INSERT INTO `users` (`id`, `username`, `realname`, `password`, `password_salt`, `contact_email`, `time`, `ipaddress`) VALUES
-(1, 'setup', 'Setup Account', '14c2a5c3681b95582c3e01fc19f49853d9cdbb31', 'hctw8lbz3uhxl6sj8ixr', 'support@amberdms.com', 1350206317, 'fdd5:8ac:8ad2:101::1001');
+(1, 'setup', 'Setup Account', '14c2a5c3681b95582c3e01fc19f49853d9cdbb31', 'hctw8lbz3uhxl6sj8ixr', 'support@amberdms.com', 0, '');
 
 -- --------------------------------------------------------
 
