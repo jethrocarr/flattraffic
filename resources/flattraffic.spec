@@ -1,91 +1,67 @@
-Summary: A web-based management system for DNS, consisting of a PHP web interface and some PHP CLI components to hook into FreeRadius.
-Name: namedmanager
+Summary: A web-based application for reporting netflow traffic usage for a small LAN.
+Name: flattraffic
 Version: 1.0.0
-Release: 1.beta.2%{dist}
+Release: 1.beta.1%{dist}
 License: AGPLv3
-URL: http://www.amberdms.com/namedmanager
+URL: http://projects.jethrocarr.com/p/oss-flattraffic
 Group: Applications/Internet
-Source0: namedmanager-%{version}.tar.bz2
+Source0: flattraffic-%{version}.tar.bz2
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch: noarch
 BuildRequires: gettext
 
 %description
-namedmanager is a web-based interface for viewing and managing DNS zones stored inside a database and generating configuration files from that.
-
+Flattraffic is a web-based application for reporting on netflow traffic usage for a small LAN.
 
 %package www
-Summary: namedmanager web-based interface and API components
+Summary: flattraffic web-based interface and API components
 Group: Applications/Internet
 
 Requires: httpd, mod_ssl
-Requires: php >= 5.3.0, mysql-server, php-mysql, php-ldap, php-soap
-Requires: perl, perl-DBD-MySQL
+Requires: php >= 5.3.0, mysql-server, php-mysql
 Prereq: httpd, php, mysql-server, php-mysql
 
 %description www
-Provides the namedmanager web-based interface and SOAP API.
+Provides the flattraffic web-based interface.
 
 
-%package bind
-Summary:  Integration components for Bind nameservers.
+%package flowd
+Summary:  Integration components for flowd collector.
 Group: Applications/Internet
 
-Requires: php-cli >= 5.3.0, php-soap, php-process
+Requires: flowd
 Requires: perl, perl-DBD-MySQL
-Requires: bind
 
-%description bind
-Provides applications for integrating with Bind nameservers and generating text-based configuration files from the API.
-
+%description flowd
+Components for use with flowd.
 
 %prep
-%setup -q -n namedmanager-%{version}
+%setup -q -n flattraffic-%{version}
 
 %build
 
 
 %install
 rm -rf $RPM_BUILD_ROOT
-mkdir -p -m0755 $RPM_BUILD_ROOT%{_sysconfdir}/namedmanager/
-mkdir -p -m0755 $RPM_BUILD_ROOT%{_datadir}/namedmanager/
+mkdir -p -m0755 $RPM_BUILD_ROOT%{_sysconfdir}/flattraffic/
+mkdir -p -m0755 $RPM_BUILD_ROOT%{_datadir}/flattraffic/
 
 # install application files and resources
-cp -pr * $RPM_BUILD_ROOT%{_datadir}/namedmanager/
+cp -pr * $RPM_BUILD_ROOT%{_datadir}/flattraffic/
 
 
 # install configuration file
-install -m0700 htdocs/include/sample-config.php $RPM_BUILD_ROOT%{_sysconfdir}/namedmanager/config.php
-ln -s %{_sysconfdir}/namedmanager/config.php $RPM_BUILD_ROOT%{_datadir}/namedmanager/htdocs/include/config-settings.php
+install -m0700 htdocs/include/sample-config.php $RPM_BUILD_ROOT%{_sysconfdir}/flattraffic/config.php
+ln -s %{_sysconfdir}/flattraffic/config.php $RPM_BUILD_ROOT%{_datadir}/flattraffic/htdocs/include/config-settings.php
 
 # install linking config file
-install -m755 htdocs/include/config.php $RPM_BUILD_ROOT%{_datadir}/namedmanager/htdocs/include/config.php
-
-
-# install configuration file
-install -m0700 bind/include/sample-config.php $RPM_BUILD_ROOT%{_sysconfdir}/namedmanager/config-bind.php
-ln -s %{_sysconfdir}/namedmanager/config-bind.php $RPM_BUILD_ROOT%{_datadir}/namedmanager/bind/include/config-settings.php
-
-# install linking config file
-install -m755 bind/include/config.php $RPM_BUILD_ROOT%{_datadir}/namedmanager/bind/include/config.php
-
-
+install -m755 htdocs/include/config.php $RPM_BUILD_ROOT%{_datadir}/flattraffic/htdocs/include/config.php
 
 # install the apache configuration file
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/httpd/conf.d
-install -m 644 resources/namedmanager-httpdconfig.conf $RPM_BUILD_ROOT%{_sysconfdir}/httpd/conf.d/namedmanager.conf
+install -m 644 resources/flattraffic-httpdconfig.conf $RPM_BUILD_ROOT%{_sysconfdir}/httpd/conf.d/flattraffic.conf
 
-# install the logpush bootscript
-mkdir -p $RPM_BUILD_ROOT/etc/init.d/
-install -m 755 resources/namedmanager_logpush.rcsysinit $RPM_BUILD_ROOT/etc/init.d/namedmanager_logpush
-
-# install the cronfile
-mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/cron.d/
-install -m 644 resources/namedmanager-bind.cron $RPM_BUILD_ROOT%{_sysconfdir}/cron.d/namedmanager-bind
-
-# placeholder configuration file
-touch $RPM_BUILD_ROOT%{_sysconfdir}/named.namedmanager.conf
 
 %post www
 
@@ -97,49 +73,13 @@ echo "Reloading httpd..."
 if [ $1 == 1 ];
 then
 	# install - requires manual user MySQL setup
-	echo "Run cd %{_datadir}/namedmanager/resources/; ./autoinstall.pl to install the SQL database."
+	echo "Run cd %{_datadir}/flattraffic/resources/; ./autoinstall.pl to install the SQL database."
 else
 	# upgrade - we can do it all automatically! :-)
 	echo "Automatically upgrading the MySQL database..."
-	%{_datadir}/namedmanager/resources/schema_update.pl --schema=%{_datadir}/namedmanager/sql/ -v
+	%{_datadir}/flattraffic/resources/schema_update.pl --schema=%{_datadir}/flattraffic/sql/ -v
 fi
 
-
-
-%post bind
-
-if [ $1 == 0 ];
-then
-	# upgrading existing rpm
-	echo "Restarting logging process..."
-	/etc/init.d/namedmanager_logpush restart
-fi
-
-
-if [ $1 == 1 ];
-then
-	# instract about named
-	echo ""
-	echo "BIND/NAMED CONFIGURATION"
-	echo ""
-	echo "NamedManager BIND components have been installed, you will need to install"
-	echo "and configure bind/named to use the configuration file by adding the"
-	echo "following to /etc/named.conf:"
-	echo ""
-	echo "#"
-	echo "# Include NamedManager Configuration"
-	echo "#"
-	echo ""
-	echo "include \"/etc/named.namedmanager.conf\";"
-	echo ""
-
-	# instruct about config file
-	echo ""
-	echo "NAMEDMANAGER BIND CONFIGURATION"
-	echo ""
-	echo "You need to set the application configuration in %{_sysconfdir}/namedmanager/config-bind.php"
-	echo ""
-fi
 
 
 %postun www
@@ -149,58 +89,30 @@ fi
 if [ $1 == 0 ];
 then
 	# user needs to remove DB
-	echo "NamedManager has been removed, but the MySQL database and user will need to be removed manually."
+	echo "FlatTraffic has been removed, but the MySQL database and user will need to be removed manually."
 fi
-
-
-%preun bind
-
-# stop running process
-/etc/init.d/namedmanager_logpush stop
-
-
 
 %clean
 rm -rf $RPM_BUILD_ROOT
 
 %files www
 %defattr(-,root,root)
-%config %dir %{_sysconfdir}/namedmanager
-%attr(770,root,apache) %config(noreplace) %{_sysconfdir}/namedmanager/config.php
-%attr(660,root,apache) %config(noreplace) %{_sysconfdir}/httpd/conf.d/namedmanager.conf
-%{_datadir}/namedmanager/htdocs
-%{_datadir}/namedmanager/resources
-%{_datadir}/namedmanager/sql
+%config %dir %{_sysconfdir}/flattraffic
+%attr(770,root,apache) %config(noreplace) %{_sysconfdir}/flattraffic/config.php
+%attr(660,root,apache) %config(noreplace) %{_sysconfdir}/httpd/conf.d/flattraffic.conf
+%{_datadir}/flattraffic/htdocs
+%{_datadir}/flattraffic/resources
+%{_datadir}/flattraffic/sql
 
-%doc %{_datadir}/namedmanager/README
-%doc %{_datadir}/namedmanager/docs/AUTHORS
-%doc %{_datadir}/namedmanager/docs/CONTRIBUTORS
-%doc %{_datadir}/namedmanager/docs/COPYING
+%doc %{_datadir}/flattraffic/README
+%doc %{_datadir}/flattraffic/docs/AUTHORS
+%doc %{_datadir}/flattraffic/docs/CONTRIBUTORS
+%doc %{_datadir}/flattraffic/docs/COPYING
 
-
-%files bind
-%defattr(-,root,root)
-%config %dir %{_sysconfdir}/namedmanager
-%config %dir %{_sysconfdir}/cron.d/namedmanager-bind
-%config(noreplace) %{_sysconfdir}/named.namedmanager.conf
-%config(noreplace) %{_sysconfdir}/namedmanager/config-bind.php
-%{_datadir}/namedmanager/bind
-/etc/init.d/namedmanager_logpush
-
+%files flowd
+%{_datadir}/flattraffic/flowcollectors/flowd
 
 %changelog
-* Thu Apr  7 2011 Jethro Carr <jethro.carr@amberdms.com> 1.0.0_beta_2
-- Released version 1.0.0_beta_2 bug fix release
-* Wed Apr  6 2011 Jethro Carr <jethro.carr@amberdms.com> 1.0.0_beta_1
-- Released version 1.0.0_beta_1
-* Mon Mar 28 2011 Jethro Carr <jethro.carr@amberdms.com> 1.0.0_alpha_5
-- Released version 1.0.0_alpha_5
-* Tue Jun 08 2010 Jethro Carr <jethro.carr@amberdms.com> 1.0.0_alpha_4
-- Released version 1.0.0_alpha_4
-* Sun May 30 2010 Jethro Carr <jethro.carr@amberdms.com> 1.0.0_alpha_3
-- Released version 1.0.0_alpha_3
-* Fri May 28 2010 Jethro Carr <jethro.carr@amberdms.com> 1.0.0_alpha_2
-- Released version 1.0.0_alpha_2
-* Mon May 24 2010 Jethro Carr <jethro.carr@amberdms.com> 1.0.0_alpha_1
-- Inital Application Release
+* Mon Nov 12 2012 Jethro Carr <jethro.carr@jethrocarr.com> 1.0.0_beta_1
+- Inital beta public release.
 
