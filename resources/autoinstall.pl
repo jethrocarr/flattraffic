@@ -186,7 +186,9 @@ system("rm -f $opt_cfgfile.new");
 $mysql_handle->disconnect;
 
 print "DB installation complete!\n";
-
+print "\n";
+print "You can no login with the default username/password of setup/setup123 at http://localhost/flattraffic\n";
+print "\n";
 
 # complete! :-)
 exit 0;
