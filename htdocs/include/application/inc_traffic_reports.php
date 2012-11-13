@@ -41,6 +41,13 @@ class traffic_reports
 		}
 		else
 		{
+			// COLLECTOR START
+			/*
+				We need to establish a connection to your DB here - if you're using MySQL,
+				you can just if OR onto the existing check below. Anything more exotic may
+				require something outside of the current framework's functions.
+			*/
+
 			if ($GLOBALS["config"]["SERVICE_TRAFFIC_DB_TYPE"] == "mysql_netflow_single")
 			{
 				$this->obj_db_traffic = New sql_query;
@@ -54,6 +61,7 @@ class traffic_reports
 			{
 				log_write("error", "traffic_reports", "Unknown database type configured, most likely new feature coding error");
 			}
+			// COLLECTOR END
 		}
 
 
@@ -453,9 +461,19 @@ class traffic_reports
 
 		foreach ($date_range as $date)
 		{
-			// query protocol data
+			// COLLECTOR START
+			/*
+				Query protocol types present in the DB.
+
+				If you're adding new types of collectors, you will need to make this an IF logic
+				block, or maybe a switch and excute the appropiate queries for your DB structure.
+			*/
+
 			$this->obj_db_traffic->string	= "SELECT src_port, dst_port, protocol, SUM(octets) as bytes FROM `traffic` WHERE received >= '". $date ."' AND received <= DATE_ADD('". $date ."', INTERVAL 1 DAY) GROUP BY protocol, src_port, dst_port";
 			$this->obj_db_traffic->execute();
+
+			// COLLECTOR END
+
 
 			if ($this->obj_db_traffic->num_rows())
 			{
@@ -570,10 +588,18 @@ class traffic_reports
 			$row_delete = array();
 
 
+			// COLLECTOR START
+			/*
+				Query Traffic DB
 
-			// query traffic database
+				If you're adding new types of collectors, you will need to make this an IF logic
+				block, or maybe a switch and excute the appropiate queries for your DB structure.
+			*/
+
 			$this->obj_db_traffic->string	= "SELECT id, src_addr, dst_addr, SUM(octets) as bytes FROM traffic WHERE received >= '". $date ."' AND received <= DATE_ADD('". $date ."', INTERVAL 1 DAY) GROUP BY src_addr, dst_addr ";
 			$this->obj_db_traffic->execute();
+
+			// COLLECTOR END
 
 
 			$data_traffic_raw	= array();
@@ -677,8 +703,12 @@ class traffic_reports
 
 				$row_delete_string		= format_arraytocommastring($row_delete, NULL);
 
+				// COLLECTOR START
+
 				$this->obj_db_traffic->string	= "DELETE FROM `traffic` WHERE id IN ($row_delete_string)";
 				$this->obj_db_traffic->execute();
+
+				// COLLECTOR END
 			}
 
 

@@ -56,6 +56,13 @@ if (user_permissions_get("admin"))
 		Test Traffic Database
 	*/
 
+	// COLLECTOR START
+	/*
+		It is nessacary to define a check here that verifies that the provider collector SQL
+		configuration is correct. If you're just using MySQL, just if OR onto the current check
+		as nothing should be different.
+	*/
+
 	if ($data["SERVICE_TRAFFIC_DB_TYPE"] == "mysql_netflow_single")
 	{
 		$obj_sql = New sql_query;
@@ -77,7 +84,7 @@ if (user_permissions_get("admin"))
 		}
 
 	}
-
+	// COLLECTOR END
 
 
 	/*

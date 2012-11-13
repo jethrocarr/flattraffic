@@ -43,8 +43,18 @@ class page_output
 		$structure = NULL;
 		$structure["fieldname"]					= "SERVICE_TRAFFIC_DB_TYPE";
 		$structure["type"]					= "radio";
+		
+		// COLLECTOR START
+		
+		/*
+			This must be the name of your collector-DB structure, if in doubt have a chat
+			with one of the existing developers.
+		*/
 		$structure["values"]					= array("mysql_netflow_single");
 		$structure["translations"]["mysql_netflow_single"]	= "MySQL netflow database, single \"traffic\" table";
+
+		// COLLECTOR END
+
 		$structure["options"]["autoselect"]			= "yes";
 		$structure["options"]["no_translate_fieldname"]		= "yes";
 		$this->obj_form->add_input($structure);
