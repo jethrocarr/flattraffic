@@ -31,7 +31,7 @@ if (user_permissions_get("admin"))
 	$data["UPSTREAM_BILLING_REPEAT_DATE"]	= @security_form_input_predefined("int", "UPSTREAM_BILLING_REPEAT_DATE", 1, "");
 	$data["BYTECOUNT"]			= @security_form_input_predefined("int", "BYTECOUNT", 1, "");
 
-	$data["PERF_CACHEMODE"]			= @security_form_input_predefined("any", "PERF_CACHEMODE", 1, "");
+//	$data["PERF_CACHEMODE"]			= @security_form_input_predefined("any", "PERF_CACHEMODE", 1, "");
 
 	$data["TRUNCATE_DB_LOCAL"]		= @security_form_input_predefined("checkbox", "TRUNCATE_DB_LOCAL", 1, "");
 	$data["TRUNCATE_DB_UNMATCHED"]		= @security_form_input_predefined("checkbox", "TRUNCATE_DB_UNMATCHED", 1, "");
