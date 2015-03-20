@@ -1,5 +1,6 @@
-FLATTRAFFIC
-------------
+# FLATTRAFFIC
+
+** This software is considered deprecated and is here for reference only **
 
 Web based application for reading newflow traffic records and reporting traffic usage
 by host, network range and protocol in periods matching that of the user's upstream
@@ -10,8 +11,7 @@ This software is licensed under the GNU AGPL as detailed in docs/COPYRIGHT
 
 
 
-DIRECTORIES
------------
+# DIRECTORIES
 
 * docs/
 	Documentation, authors file, copyright/license and other information.
